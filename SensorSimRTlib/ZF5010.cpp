@@ -1,30 +1,30 @@
-#include "M3DLMS100.h"
+#include "ZF5010.h"
 #include "common.h"
 
-M3DLMS100::M3DLMS100(void)
+ZF5010::ZF5010(void)
 {
 	GenerateRays();
 	
-	range=18;
-	max_noise_in_m=0.012f;//LMS100 statistical error
-	max_noise_in_percent_0_to_1=0;
+	range=187.3f;
+	max_noise_in_m=0.0001f;
+	max_noise_in_percent_0_to_1=0.0001f;
 	
 	UpdateRays();
 }
-M3DLMS100::~M3DLMS100(void)
+ZF5010::~ZF5010(void)
 {
 	delete[] rays;
 	delete[] rays_orig;
 	delete[] distances;
 }
-void M3DLMS100::GenerateRays()
+void ZF5010::GenerateRays()
 {
 	delete[] rays_orig;
 	delete[] rays;
 	delete[] distances;
 	
-	width=541;
-	height=250;
+	width=5000;
+	height=5000;
 	num_rays=width*height;
 
 	
@@ -35,7 +35,7 @@ void M3DLMS100::GenerateRays()
 	
 
 
-	double angle_x_range=270;
+	double angle_x_range=320;
 	double angle_z_range=180;
 
 	double dx=angle_x_range/width;

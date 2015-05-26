@@ -96,6 +96,7 @@
     <ClCompile Include="tiny_obj_loader.cc" />
     <ClCompile Include="VirtualScene.cpp" />
     <ClCompile Include="VirtualSensor.cpp" />
+    <ClCompile Include="ZF5010.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
@@ -105,6 +106,7 @@
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="VirtualScene.h" />
     <ClInclude Include="VirtualSensor.h" />
+    <ClInclude Include="ZF5010.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

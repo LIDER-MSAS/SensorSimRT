@@ -21,6 +21,7 @@
 
 
 #include "M3DLMS100.h"
+#include "ZF5010.h"
 
 
 using namespace std;
@@ -362,6 +363,12 @@ void qglWidget::slotSensor(QString s)
 	if(s=="Mandala 3D Unit LMS100")
 	{
 		sensor=new M3DLMS100;
+		sensor->SetPosition(posx,posy,posz);
+		this->s.SetSensor(sensor);
+	}
+	if(s=="ZF 5010")
+	{
+		sensor=new ZF5010;
 		sensor->SetPosition(posx,posy,posz);
 		this->s.SetSensor(sensor);
 	}
