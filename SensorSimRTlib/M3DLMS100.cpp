@@ -22,19 +22,17 @@ void M3DLMS100::GenerateRays()
 	delete[] rays_orig;
 	delete[] rays;
 	delete[] distances;
+	delete[] intensity;
 	
 	width=541;
 	height=250;
 	num_rays=width*height;
 
-	
-	
 	distances=new float[num_rays];
 	rays=new float[6*num_rays];
 	rays_orig=new float[6*num_rays];
+	intensity=new float[num_rays];
 	
-
-
 	double angle_x_range=270;
 	double angle_z_range=180;
 

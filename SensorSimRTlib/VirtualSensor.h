@@ -6,8 +6,8 @@
 class DLLIMPORT VirtualSensor
 {
 public:
-	float* rays;
-	float* rays_orig;
+	float *rays;
+	float *intensity;
 	unsigned int num_rays;
 	unsigned int width;
 	unsigned int height;
@@ -33,7 +33,9 @@ public:
 	void SetMatrix(float m[16]);
 	void SetNoise(double n);
 
+	float frame[16];
 protected:
+	float* rays_orig;
 	/*
 	* nrays (4 byte int)
 	* rays ({ float3 origin, float3 direction } * nrays)
@@ -41,7 +43,6 @@ protected:
 	void readRays(const char* filename);
 	void GetPointCloudHost(float *data);
 	void UpdateRays();
-	float frame[16];
 };
 
 #endif

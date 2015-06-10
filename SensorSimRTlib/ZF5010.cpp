@@ -22,18 +22,16 @@ void ZF5010::GenerateRays()
 	delete[] rays_orig;
 	delete[] rays;
 	delete[] distances;
+	delete[] intensity;
 	
 	width=5000;
 	height=5000;
 	num_rays=width*height;
 
-	
-	
 	distances=new float[num_rays];
 	rays=new float[6*num_rays];
 	rays_orig=new float[6*num_rays];
-	
-
+	intensity=new float[num_rays];
 
 	double angle_x_range=320;
 	double angle_z_range=180;

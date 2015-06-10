@@ -3,13 +3,10 @@
 
 #include <QGLWidget>
 #include <QTimer>
-#include <QOpenGLFunctions_3_3_Core>
 #include <string>
 #include <vector>
 #include <QtGui>
 
-#include "GLSLManager.h"
-#include "shaders.h"
 
 #include "sensorsimrt.h"
 using namespace std;
@@ -32,20 +29,15 @@ public slots:
 	void slotScale(double);
 	void slotUpdateScene();
 	void slotSensor(QString);
+	void slotPoints(bool);
+	void slotTriangles(bool);
 
 signals:
 
 private:
-	GLSLManager *glsl;
 
-	QOpenGLFunctions_3_3_Core *glReady;
-	GLuint VAOid_points;
-	GLuint VAOid_x;
-	
-	GLuint VBOid_x;
-	GLuint VBOid_c;
-	GLuint VBOid_points;
-	GLuint VBOid_color;
+	bool showPoints;
+	bool showTriangles;
 
 	float translate_z;
     float rotate_x;
@@ -72,9 +64,6 @@ protected:
 public:
 	qglWidget(QWidget *parent);
 	~qglWidget();
-
-
-	//bool w;
 };
 
 

@@ -13,52 +13,22 @@
 class DLLIMPORT SensorSimRT
 {public:
 
+	VirtualScene *scene;
 
 	RTUtraversal t;
 	RTUtraversalresult* results;
+	float3 *normals;
+	float2 *barycentric;
 	RTcontext context;
 
 	float* rays_mapped_ptr;
 	RTUtraversalresult* results_mapped_ptr;
+	void *normals_mapped_ptr;
+	void *barycentric_mapped_ptr;
 
 	int cpu_threads;
 
-	SensorSimRT(int cpu_threads=0):cpu_threads(cpu_threads),
-		t(0),
-		results(0),
-		context(0),
-		rays_mapped_ptr(0),
-		results_mapped_ptr(0)
-	{
-		scene=0;
-		sensor=0;
-
-		RTresult res=rtuTraversalCreate(&t, RTU_QUERY_TYPE_CLOSEST_HIT,
-			RTU_RAYFORMAT_ORIGIN_DIRECTION_INTERLEAVED,
-			RTU_TRIFORMAT_MESH,
-			RTU_OUTPUT_NONE,
-			cpu_threads ? RTU_INITOPTION_CPU_ONLY : RTU_INITOPTION_NONE,
-			context);
-
-		if(res!=RT_SUCCESS)
-		{
-			printf("Could not create Optix context. Error %d\n",res);
-			exit(1);
-		}
-
-		if(cpu_threads)
-		{
-			printf("CPU simulation using %d threads.\n", cpu_threads);
-			OPTIX_ERRROR_CHECK(rtuTraversalSetOption(t, RTU_OPTION_INT_NUM_THREADS, (void*)(&cpu_threads)));
-		}
-		else
-		{
-			printf("GPU simulation\n");
-		}
-
-
-	}
-
+	SensorSimRT(int cpu_threads=0);
 
 	void InitSim();
 	void Simulate();
@@ -70,7 +40,7 @@ class DLLIMPORT SensorSimRT
 	void GetPointCloud(unsigned int &size, float *data);
 private:
 	void GetResults(RTUtraversalresult* results,float *distances, unsigned int num_rays, float maxdist);
+	void GetIntensity(float *rays, float3* normals,float *intensity, unsigned int num_rays);
 	void ApplyNoise(float *distances, unsigned int num_rays, float max_noise_in_m, float max_noise_in_percent_0_to_1);
-	VirtualScene *scene;
 	VirtualSensor *sensor;
 };

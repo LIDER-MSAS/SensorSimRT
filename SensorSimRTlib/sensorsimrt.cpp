@@ -16,9 +16,49 @@
 # include <dirent.h>
 #endif
 
+#include <numeric>      // std::inner_product
 
 
+SensorSimRT::SensorSimRT(int cpu_threads)
+{
+	scene=0;
+	sensor=0;
+	this->cpu_threads=cpu_threads;
+	t=0;
+	results=0;
+	normals=0;
+	barycentric=0;
+	context=0;
+	rays_mapped_ptr=0;
+	results_mapped_ptr=0;
+	normals_mapped_ptr=0;
+	barycentric_mapped_ptr=0;
 
+	RTresult res=rtuTraversalCreate(&t, RTU_QUERY_TYPE_CLOSEST_HIT,
+		RTU_RAYFORMAT_ORIGIN_DIRECTION_INTERLEAVED,
+		RTU_TRIFORMAT_MESH,
+		RTU_OUTPUT_NORMAL | RTU_OUTPUT_BARYCENTRIC,
+		cpu_threads ? RTU_INITOPTION_CPU_ONLY : RTU_INITOPTION_NONE,
+		context);
+
+	if(res!=RT_SUCCESS)
+	{
+		printf("Could not create Optix context. Error %d\n",res);
+		exit(1);
+	}
+
+	if(cpu_threads)
+	{
+		printf("CPU simulation using %d threads.\n", cpu_threads);
+		OPTIX_ERRROR_CHECK(rtuTraversalSetOption(t, RTU_OPTION_INT_NUM_THREADS, (void*)(&cpu_threads)));
+	}
+	else
+	{
+		printf("GPU simulation\n");
+	}
+
+
+}
 
 void SensorSimRT::InitSim()
 {
@@ -36,9 +76,12 @@ void SensorSimRT::InitSim()
 	OPTIX_ERRROR_CHECK(rtuTraversalUnmapRays(t));
 	
 
-	free(results);
-	results=(RTUtraversalresult*)malloc(sensor->num_rays*sizeof(RTUtraversalresult));
-	
+	delete[] results;
+	results=new RTUtraversalresult [sensor->num_rays];
+	delete[] normals;
+	normals = new float3[sensor->num_rays];
+	delete[] barycentric;
+	barycentric = new float2[sensor->num_rays];
 
 	UpdateOptixScene();
 	
@@ -53,6 +96,8 @@ void SensorSimRT::Simulate()
 	}
 	size_t ray_buf_size=sensor->num_rays*sizeof(float3)*2;
 	//printf("ray_buf_size=%d\n",ray_buf_size);
+
+
 	
 	OPTIX_ERRROR_CHECK(rtuTraversalMapRays(t, sensor->num_rays, &rays_mapped_ptr));
 	
@@ -65,16 +110,23 @@ void SensorSimRT::Simulate()
 	
 
 	OPTIX_ERRROR_CHECK(rtuTraversalMapResults(t, &results_mapped_ptr));
-	
 	memcpy(results, results_mapped_ptr, sensor->num_rays * sizeof(RTUtraversalresult));
-	
 	OPTIX_ERRROR_CHECK(rtuTraversalUnmapResults(t));
 	
+
+	OPTIX_ERRROR_CHECK( rtuTraversalMapOutput( t, RTU_OUTPUT_NORMAL, &normals_mapped_ptr ) );
+    memcpy( normals, normals_mapped_ptr, sensor->num_rays * sizeof(float3) );
+    OPTIX_ERRROR_CHECK( rtuTraversalUnmapOutput( t, RTU_OUTPUT_NORMAL ) );
+
+	OPTIX_ERRROR_CHECK( rtuTraversalMapOutput( t, RTU_OUTPUT_BARYCENTRIC, &barycentric_mapped_ptr ) );
+	memcpy( barycentric, barycentric_mapped_ptr, sensor->num_rays * sizeof(float2) );
+    OPTIX_ERRROR_CHECK( rtuTraversalUnmapOutput( t, RTU_OUTPUT_BARYCENTRIC ) );
+
 	
 	GetResults(results,sensor->distances,sensor->num_rays,sensor->range);
+	GetIntensity(sensor->rays, normals, sensor->intensity,sensor->num_rays);
 	
 	ApplyNoise(sensor->distances,sensor->num_rays,sensor->max_noise_in_m,sensor->max_noise_in_percent_0_to_1);
-	
 }
 void SensorSimRT::GetResults(RTUtraversalresult* results,float *distances, unsigned int num_rays, float maxdist)
 {
@@ -87,10 +139,25 @@ void SensorSimRT::GetResults(RTUtraversalresult* results,float *distances, unsig
 		else
 		{
 			distances[i]=0;
+			results[i].prim_id=-1;
+			results[i].t=0;
 		}
 
 	}
 }
+void SensorSimRT::GetIntensity(float *rays, float3* normals,float *intensity, unsigned int num_rays)
+{
+	for(unsigned int i=0;i<num_rays;++i)
+	{
+		float v0[]={rays[6*i+3],rays[6*i+4],rays[6*i+5]};
+		float v1[]={normals[i].x,normals[i].y,normals[i].z};
+
+		float prod=v0[0]*v1[0]+v0[1]*v1[1]+v0[2]*v1[2];
+		//printf("prod = %f\n",prod);
+		intensity[i]=fabs(prod);
+	}
+}
+
 void SensorSimRT::ApplyNoise(float *distances, unsigned int num_rays, float max_noise_in_m, float max_noise_in_percent_0_to_1)
 {
 	for(unsigned int i=0;i<num_rays;++i)
@@ -140,9 +207,13 @@ void SensorSimRT::SetSensor(VirtualSensor *sensor)
 	
 	OPTIX_ERRROR_CHECK(rtuTraversalUnmapRays(t));
 	
-
-	free(results);
-	results=(RTUtraversalresult*)malloc(sensor->num_rays*sizeof(RTUtraversalresult));
+	
+	delete[] results;
+	results=new RTUtraversalresult [sensor->num_rays];
+	delete[] normals;
+	normals = new float3[sensor->num_rays];
+	delete[] barycentric;
+	barycentric = new float2[sensor->num_rays];
 }
 void SensorSimRT::GetPointCloud(unsigned int &size, float *data)
 {

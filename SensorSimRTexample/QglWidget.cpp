@@ -49,8 +49,8 @@ qglWidget::qglWidget(QWidget *parent) : QGLWidget(QGLFormat(QGL::SampleBuffers),
     rotate_x=-64;
     rotate_y=212;
 
-	VAOid_M=0;
-	VBOid_M=0;
+	VAOid_points=0;
+	VBOid_points=0;
 
 	posx=posy=posz=0;
 
@@ -92,15 +92,21 @@ void qglWidget::initializeGL()
 				0,1,0,
 				0,0,0,
 				0,0,1};
-
+	float color[6]={0,0.25,0,0.5,0,0.75};
+	
 	glReady->glGenVertexArrays(1, &VAOid_x);
 	glReady->glBindVertexArray(VAOid_x);
 	glReady->glGenBuffers(1, &VBOid_x);
+	glReady->glGenBuffers(1, &VBOid_c);
 	
+	glReady->glEnableVertexAttribArray(0);
 	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_x);
 	glReady->glBufferData(GL_ARRAY_BUFFER, 6 * 3 * sizeof(float), axes, GL_STATIC_DRAW);
 	glReady->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glReady->glEnableVertexAttribArray(0);
+	glReady->glEnableVertexAttribArray(1);
+	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_c);
+	glReady->glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), color, GL_STATIC_DRAW);
+	glReady->glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
 
 	glReady->glBindVertexArray(0);
 
@@ -134,32 +140,48 @@ void qglWidget::paintGL()
 {
 	unsigned int num_rays=sensor->num_rays;
 	float *data=new float[num_rays*3];
-
 	
+	float *color_data=new float[num_rays];
+	
+	for(int i=0;i<num_rays;++i)
+	{
+		color_data[i]=sensor->intensity[i];
+	}
+
+
 	s.Simulate();
 
 	sensor->GetPointCloud(data);
 
 
+
+
 	
-	if(!VAOid_M)
-		glReady->glGenVertexArrays(1, &VAOid_M);
+	if(!VAOid_points)
+		glReady->glGenVertexArrays(1, &VAOid_points);
 	
-	glReady->glBindVertexArray(VAOid_M);
+	glReady->glBindVertexArray(VAOid_points);
 	
-	if(!VBOid_M)
-		glReady->glGenBuffers(2, &VBOid_M);
+	if(!VBOid_points)
+		glReady->glGenBuffers(1, &VBOid_points);
 	
-	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_M);
-	
+	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_points);
 	glReady->glBufferData(GL_ARRAY_BUFFER, num_rays * 3 * sizeof(float), data, GL_STATIC_DRAW);
 	
-	glReady->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	if(!VBOid_color)
+		glReady->glGenBuffers(1, &VBOid_color);
 	
+	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_color);
+	glReady->glBufferData(GL_ARRAY_BUFFER, num_rays * sizeof(float), color_data, GL_STATIC_DRAW);
+
 	glReady->glEnableVertexAttribArray(0);
+	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_points);
+	glReady->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,(void*)0);
 	
-	glReady->glBindVertexArray(0);
-	
+	// 2nd attribute buffer : colors
+	glReady->glEnableVertexAttribArray(1);
+	glReady->glBindBuffer(GL_ARRAY_BUFFER, VBOid_color);
+	glReady->glVertexAttribPointer(1,1,GL_FLOAT,GL_FALSE,0,(void*)0);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
@@ -195,57 +217,24 @@ void qglWidget::paintGL()
 	glsl->UseProgram1();
 	
 	
-	float col[3]={0,0,0};
-
 	
 	
-	glsl->Uniform3fv(col,"FColor");
 	
-	
-	glReady->glBindVertexArray(VAOid_M);
+	glReady->glBindVertexArray(VAOid_points);
 	glDrawArrays(GL_POINTS,0,num_rays);
 	
 	
-	col[0]=0;
-	col[1]=0;
-	col[2]=1;
-	
-	
-	
-
-	glsl->Uniform3fv(col,"FColor");
-	
 	
 
 
-	col[0]=1;
-	col[1]=0;
-	col[2]=0;
-	glsl->Uniform3fv(col,"FColor");
 	glReady->glBindVertexArray(VAOid_x);
-	glDrawArrays(GL_LINES,0,2);
-	
-	
-	col[0]=0;
-	col[1]=1;
-	col[2]=0;
-	glsl->Uniform3fv(col,"FColor");
-	glDrawArrays(GL_LINES,2,2);
-	
-	
-	col[0]=0;
-	col[1]=0;
-	col[2]=1;
-	glsl->Uniform3fv(col,"FColor");
-	glDrawArrays(GL_LINES,4,2);
-	
+	glDrawArrays(GL_LINES,0,6);
 	
 	
 	glReady->glBindVertexArray(0); 
 
-	
-	
 	delete[] data;
+	delete[] color_data;
 	
 }
 void qglWidget::resizeGL(int width, int height)

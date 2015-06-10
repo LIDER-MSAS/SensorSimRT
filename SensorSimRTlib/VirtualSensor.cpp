@@ -28,7 +28,7 @@ VirtualSensor::VirtualSensor(void)
 	range=180;
 	max_noise_in_m=0.012;
 	max_noise_in_percent_0_to_1=0;
-
+	intensity=0;
 
 	//identity matrix
 	for(int i=0;i<16;++i)
@@ -54,6 +54,9 @@ void VirtualSensor::readRays(const char* filename)
 	delete[] rays;
 	readData(in, &num_rays, (void**)&rays_orig, 6 * sizeof(float), filename);
 	rays=new float[6*num_rays];
+
+	delete[] intensity;
+	intensity=new float[3*num_rays];
 
 	UpdateRays();
 }
